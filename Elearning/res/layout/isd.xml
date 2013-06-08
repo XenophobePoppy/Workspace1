@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/images1" >
+ 
+     <TextView
+        android:id="@+id/titleisd"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Interactive System Design"
+        android:textSize="25dp"/>
+     <Button android:id="@+id/buttonisdlec1"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="Lecture 1"
+          android:gravity="left|center_vertical"/>
+     <Button android:id="@+id/buttonisdlec2"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="Lecture 2"
+          android:gravity="left|center_vertical"/>
+     <Button android:id="@+id/buttonisdlec3"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="Lecture 3"
+          android:gravity="left|center_vertical"/>
+     
+    </LinearLayout> 
+     
+     <SlidingDrawer android:layout_height="match_parent" 
+         android:layout_width="match_parent" 
+       
+         android:id="@+id/slidingisd" 
+         android:handle="@+id/handleisd" 
+         android:content="@+id/contentisd">
+         
+		<Button android:layout_height="wrap_content" 
+		    android:layout_width="wrap_content" 
+		    android:id="@+id/handleisd" 
+		    android:text="Widget">
+		</Button>
+    <LinearLayout android:layout_height="match_parent" 
+    android:layout_width="match_parent" 
+    android:id="@+id/contentisd">
+   
+  <Button android:id="@+id/isdf"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="forum"
+          android:gravity="left|center_vertical"/>
+   <Button android:id="@+id/isdback"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="back"
+          android:gravity="left|center_vertical"/>
+    
+		</LinearLayout>
+	</SlidingDrawer>
+	</FrameLayout>
+     
+     

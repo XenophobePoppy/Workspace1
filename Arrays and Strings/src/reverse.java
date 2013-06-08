@@ -1,0 +1,22 @@
+
+public class reverse {
+
+	static void reverse(char[] string){
+		int stat=0;
+		int end=string.length-2;
+		while(stat<end){
+			char temp;
+			temp=string[stat];
+			string[stat]=string[end];
+			string[end]=temp;
+			stat++;
+			end--;
+		}
+	}
+	
+	public static void main(String[] args){
+		char a[]={'a','b','c','d',' '};
+		reverse(a);
+		System.out.print(a);
+	}
+}

@@ -1,0 +1,657 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">    
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>Progressive Zooming - ISD Course</title>
+	<link rel="stylesheet" href="style/general.css" />
+    <script src="http://maps.google.com/maps?file=api&v=2.x&key=AIzaSyACZte7oGtvkhonolXtQEHQtVvZRD8ujX4"
+            type="text/javascript" charset="utf-8"></script>
+	<script src="eshapes.js" type="text/javascript"></script>
+	<!--script src="http://maps.googleapis.com/maps/api/js?key=AIzaSyACZte7oGtvkhonolXtQEHQtVvZRD8ujX4&sensor=false"
+		    type="text/javascript" charset="utf-8"></script-->
+    <script type="text/javascript">
+    //<![CDATA[
+
+    var map;
+    var areas = null;
+    var user_progress;
+	var maxlat = 40.6;
+	var minlat = -40.6;
+	var maxlng = 180;
+	var minlng = -180;
+	var lastselecteddocno = '';
+	var lastpoly = null;
+	var newpoly = null;
+	var click1 = 0;
+	var click2 = 0;
+	var clckTimeOut = null;
+	var mm1 = null;
+	
+	var progress_bubbles = new Array(4);
+	progress_bubbles[0] = [];
+	progress_bubbles[1] = [];
+	progress_bubbles[2] = [];
+	progress_bubbles[3] = [];
+
+	var allowedBounds = new GLatLngBounds(new GLatLng(58,-179), new GLatLng(-58,179));
+	var progress_colors = ['#F03B20','#FD8D3C','#FECC5C','#FECC5C','#C2E699','#78C679','#31A354'];
+	
+		// GET THE COORDINATES OF EVERY AREA (LECTURE, TOPIC, SECTION ...) AND 
+		// STORE ALL INFORMATION IN areas ARRAY
+		GDownloadUrl("coords.xml", function(data, responseCode) {
+		  var xml = GXml.parse(data);
+		  areas = xml.documentElement.getElementsByTagName("area");
+		});
+
+		// GET THE PROGRESS OF THE USER FOR EACH DOC (LECTURE, TOPIC, SECTION ...) AND 
+		// STORE ALL INFORMATION IN user_progress ARRAY
+		GDownloadUrl("progress.xml", function(data, responseCode) {
+		  var xml = GXml.parse(data);
+		  user_progress = xml.documentElement.getElementsByTagName("doc");
+		  //alert('hey!!');
+		});
+	
+	
+	
+	// progress icons
+	var up1_Icon = new GIcon();
+      up1_Icon.image = "images/uprogress1.png";
+      up1_Icon.iconSize = new GSize(14, 22);
+      up1_Icon.iconAnchor = new GPoint(7, 22);
+      up1_Icon.infoWindowAnchor = new GPoint(7, 2);
+      up1_Icon.transparent = "images/uprogress1.png";
+      //Icon.imageMap=[9,0,6,1,4,2,2,4,0,8,0,12,1,14,2,16,5,19,7,23,8,26,9,30,9,34,11,34,11,30,12,26,13,24,14,21,16,18,18,16,20,12,20,8,18,4,16,2,15,1,13,0];
+	var up2_Icon = new GIcon();
+      up2_Icon.image = "images/uprogress2.png";
+      up2_Icon.iconSize = new GSize(14, 22);
+      up2_Icon.iconAnchor = new GPoint(7, 22);
+      up2_Icon.infoWindowAnchor = new GPoint(7, 2);
+      up2_Icon.transparent = "images/uprogress2.png";
+	var up3_Icon = new GIcon();
+      up3_Icon.image = "images/uprogress3.png";
+      up3_Icon.iconSize = new GSize(14, 22);
+      up3_Icon.iconAnchor = new GPoint(7, 22);
+      up3_Icon.infoWindowAnchor = new GPoint(7, 2);
+      up3_Icon.transparent = "images/uprogress3.png";
+	var up4_Icon = new GIcon();
+      up4_Icon.image = "images/uprogress4.png";
+      up4_Icon.iconSize = new GSize(14, 22);
+      up4_Icon.iconAnchor = new GPoint(7, 22);
+      up4_Icon.infoWindowAnchor = new GPoint(7, 2);
+      up4_Icon.transparent = "images/uprogress4.png";
+	var up5_Icon = new GIcon();
+      up5_Icon.image = "images/uprogress5.png";
+      up5_Icon.iconSize = new GSize(14, 22);
+      up5_Icon.iconAnchor = new GPoint(7, 22);
+      up5_Icon.infoWindowAnchor = new GPoint(7, 2);
+      up5_Icon.transparent = "images/uprogress5.png";	
+      
+      
+	function getLat(y){
+		var lati = y*(minlat-maxlat)+maxlat;
+		var correction = -4.0*(y-0.5)
+		if (y>0 && y<0.99) lati += correction;
+		//if (y>0.5) lati = lati - 2;
+		return lati;
+	}
+	function getLng(x){
+		var lngi = x*(maxlng-minlng)-maxlng;
+		return lngi;
+	}
+	
+	function getYFromLat(lat){
+		
+		return (lat-maxlat)/(minlat-maxlat);
+	}
+	function getXFromLng(lng){
+		return (lng+maxlng)/(maxlng-minlng);
+	}
+	
+	function locateArea(x,y,level){
+		var result=new Array();
+		for (var i = 0; i < areas.length; i++) {
+			var alevel = parseInt(areas[i].getAttribute("layer"));
+			if (alevel == level){
+				var x1 = parseFloat(areas[i].getAttribute("x1"));
+				var x2 = parseFloat(areas[i].getAttribute("x2"));
+				var y1 = parseFloat(areas[i].getAttribute("y1"));
+				var y2 = parseFloat(areas[i].getAttribute("y2"));
+				var scx = areas[i].getAttribute("cx");
+				var scy = areas[i].getAttribute("cy");
+				var docno = areas[i].getAttribute("docno");
+				
+				if (x>=x1 && x<=x2 && y>=y1 && y<=y2){
+					//alert(x+' in ('+x1+','+x2+')');
+					var label = areas[i].getAttribute("label");
+					document.getElementById("label").value = label;
+					//openInfoWindow("Park");
+					result[0] = "<div class=\"mapbaloon\"><h3>"+label+"</h3>\n"+areas[i].getAttribute("title")+"\n</div>";
+					result[1] = scx;
+					result[2] = scy;
+					result[3] = x1;
+					result[4] = x2;
+					result[5] = y1;
+					result[6] = y2;
+					result[7] = docno;
+					
+					return result;
+				}
+			}
+		}
+		return null;
+	}
+
+	
+	function getProgressForDocNo(docno){
+		var result=new Array();
+		for (var i = 0; i < user_progress.length; i++) {
+			var doci = user_progress[i].getAttribute("docno");
+			if (doci == docno){
+				result[0] = parseFloat(user_progress[i].getAttribute("progress"));
+				result[1] = parseFloat(user_progress[i].getAttribute("oprogress"));
+				return result;
+			}
+		}
+		return null;
+	}
+	
+	function placeProgressMarkers(areas){
+		for (var i = 0; i < areas.length; i++) {
+			var level = parseInt(areas[i].getAttribute("layer"));
+			//alert(level);
+			var docno = areas[i].getAttribute("docno");
+			var progress = [];
+			//progress = getProgressForDocNo(docno);
+			
+			//var up = progress[0];
+			var up = 0.35;
+			//var gp = progress[1];
+			
+			progressicon = null;
+			if (up>0    && up <= 0.20) progressicon = up1_Icon;
+			if (up>0.20 && up <= 0.40) progressicon = up2_Icon;
+			if (up>0.40 && up <= 0.60) progressicon = up3_Icon;
+			if (up>0.60 && up <= 0.80) progressicon = up4_Icon;
+			if (up>0.80 && up <= 1)    progressicon = up5_Icon;
+			
+			var cy = parseFloat(areas[i].getAttribute("cy"));
+			var cx = parseFloat(areas[i].getAttribute("cx"));
+			var lati = getLat(cy);
+			var lngi = getLng(cx);
+			
+		    var point = new GLatLng(lati,lngi);
+		    //alert(lati+' '+lngi);
+		    if (level>0){
+		    	var marker=new GMarker(point);
+				mm1.addMarker(marker,level+1,level+1); 
+			
+		    }
+		    
+		    //map.addOverlay(marker);
+		}
+		return null;
+	}
+	
+	
+	function checkBounds() {
+        // Perform the check and return if OK
+        if (allowedBounds.contains(map.getCenter())) {
+          return;
+        }
+        // It`s not OK, so find the nearest allowed point and move there
+        var C = map.getCenter();
+        var X = C.lng();
+        var Y = C.lat();
+
+        var AmaxX = allowedBounds.getNorthEast().lng();
+        var AmaxY = allowedBounds.getNorthEast().lat();
+        var AminX = allowedBounds.getSouthWest().lng();
+        var AminY = allowedBounds.getSouthWest().lat();
+
+        if (X < AminX) {X = AminX;}
+        if (X > AmaxX) {X = AmaxX;}
+        if (Y < AminY) {Y = AminY;}
+        if (Y > AmaxY) {Y = AmaxY;}
+        //alert ("Restricting "+Y+" "+X);
+        map.setCenter(new GLatLng(Y,X));
+	}
+	
+    function customGetTileURL(a,b) {
+        return "level" + b + "-" + a.x + "-" + a.y + ".png"
+    }
+
+    function resize(){
+		var map_obj=document.getElementById("map");
+		var disp=getDispSize();
+		//map_obj.style.width=(disp.width - 20)+"px";
+		//map_obj.style.height=(disp.height - 20)+"px";
+		map_obj.style.width=(960)+"px";
+		map_obj.style.height=(400)+"px";
+		if( map ){
+	       map.checkResize();
+	       map.panTo(new GLatLng(0, 0));
+		}
+    }
+
+    function getDispSize(){
+	if(document.all){
+	       if(window.opera){
+		   return {width:document.body.clientWidth,height:document.body.clientHeight};
+	       }else{
+		   return {width:document.documentElement.clientWidth,height:document.documentElement.clientHeight};
+	       }
+	} else if(document.layers || document.getElementById){
+	       return {width:window.innerWidth,height:window.innerHeight};
+	}
+    }
+
+    function load() {
+      if (GBrowserIsCompatible()) {
+        resize();
+		
+        var copyright = new GCopyright(1,
+                              new GLatLngBounds(new GLatLng(-50, -180), new GLatLng(50, 180)), 0,
+                              "<a href=\"http://www.g-language.org/\" target=\"_blank\"><img src=\"http://restauro-g.iab.keio.ac.jp/Res-Pic/glang.png\" border=0></a>");
+        var copyrightCollection = new GCopyrightCollection();
+        copyrightCollection.addCopyright(copyright);
+		
+		
+		// GET THE COORDINATES OF EVERY AREA (LECTURE, TOPIC, SECTION ...) AND 
+		// STORE ALL INFORMATION IN areas ARRAY
+		/*GDownloadUrl("coords.xml", function(data, responseCode) {
+		  var xml = GXml.parse(data);
+		  areas = xml.documentElement.getElementsByTagName("area");
+		});
+
+		// GET THE PROGRESS OF THE USER FOR EACH DOC (LECTURE, TOPIC, SECTION ...) AND 
+		// STORE ALL INFORMATION IN user_progress ARRAY
+		GDownloadUrl("progress.xml", function(data, responseCode) {
+		  var xml = GXml.parse(data);
+		  user_progress = xml.documentElement.getElementsByTagName("doc");
+		  //alert('hey!!');
+		});
+
+*/
+       // Create a new Mercator projection instance 
+        var zoomlevel = 4;
+        var projection = new GMercatorProjection(zoomlevel + 1); 
+		
+		
+		
+       // add an exposed copy of the tileBounds array 
+        projection.tileBounds = []; 
+        var c = 1; 
+        for(var d = 0; d <= zoomlevel; d++){ 
+            projection.tileBounds.push(c); 
+            c *= 2 
+	    } 
+
+       // == a method that checks if the y value is in range 
+       // == but *doesnt* wrap the x value == 
+       projection.tileCheckRange = function(a,b,c){ 
+	   		var d=this.tileBounds[b]; 
+	   		if (a.y<0||a.y>=d) { 
+	       		return false; 
+	   		} 
+
+	   		if(a.x<0||a.x>=d){ 
+	      		return false; 
+	   		} 
+          	return true 
+	  	} 
+
+        // == a method that returns the width of the tilespace ==       
+	    projection.getWrapWidth = function(zoom) { 
+		return 99999999999999; 
+	    } 
+
+        //create a custom picture layer
+        var pic_tileLayers = [ new GTileLayer(copyrightCollection , 0, 4)];
+        pic_tileLayers[0].getTileUrl = customGetTileURL;
+        pic_tileLayers[0].isPng = function(){ return true};
+        pic_tileLayers[0].getOpacity = function() { return 1.0; };
+        var pic_customMap = new GMapType(pic_tileLayers, projection, "View1",
+            {maxResolution:zoomlevel, minResolution:1, errorMessage:"Data not available"});
+
+        //Now create the custom map. Would normally be G_NORMAL_MAP,G_SATELLITE_MAP,G_HYBRID_MAP
+        map = new GMap2(document.getElementById("map"), 
+        		{
+        		mapTypes:[pic_customMap],
+        		backgroundColor:"#ffffff",
+        		draggableCursor:"crosshair", 
+		        draggingCursor:"move" 
+        		});
+        //map.addControl(new GLargeMapControl());
+        map.addControl(new GLargeMapControl3D());
+		map.addControl(new GMapTypeControl());
+        map.addControl(new GOverviewMapControl());
+        map.enableDoubleClickZoom();
+        map.enableContinuousZoom();
+        //map.enableScrollWheelZoom();
+        map.setCenter(new GLatLng(0, 0), 2, pic_customMap);
+		//map.addOverlay(new GMarker(new GLatLng(0,0)));
+		
+		// @@@@
+		//var pts = [];
+		//pts[0] = new GLatLng(-15,-30);
+	    //pts[1] = new GLatLng(-15,30);
+		//pts[2] = new GLatLng(3,30);
+	    //pts[3] = new GLatLng(3,-30);
+	    //pts[4] = new GLatLng(-15,-30);
+		
+		//var polygon = new GPolygon(pts,'#009900',4,0.6,'#009900',0.3);
+	    //map.addOverlay(polygon);
+		
+		// Add a move listener to restrict the bounds range
+      	//GEvent.addListener(map, "move", function() {
+        //	checkBounds();
+      	//});
+		
+		GEvent.addListener(map, 'mousemove', function(latlng)
+	    {
+	    	if (latlng)
+	        {	
+	        	var zoomlevel = map.getZoom();
+	        	var x = getXFromLng(latlng.lng());
+	        	var y = getYFromLat(latlng.lat());
+	        	var res = locateArea(x,y,zoomlevel-1);
+	        	//var content = locateArea(x,y,zoomlevel-1);
+	        	if(res != null && res.length>0 && zoomlevel>1){
+		        	var cy = parseFloat(res[2]);
+					var cx = parseFloat(res[1]);
+					var x1 = parseFloat(res[3]);
+					var x2 = parseFloat(res[4]);
+					var y1 = parseFloat(res[5]);
+					var y2 = parseFloat(res[6]);
+					var docno = res[7];
+					
+					var lati = getLat(cy);
+					var lngi = getLng(cx);
+					
+					var lngx1 = getLng(x1);
+					var lngx2 = getLng(x2);
+					var laty1 = getLat(y1);
+					var laty2 = getLat(y2);
+					
+		    		var point = new GLatLng(lati,lngi);
+	        		
+	        		var width = 8-zoomlevel;
+	        		var color = "#3399CC";
+	        		var pts = [];
+	        		pts[0] = new GLatLng(laty1,lngx1);
+	        		pts[1] = new GLatLng(laty1,lngx2);
+	        		pts[2] = new GLatLng(laty2,lngx2);
+	        		pts[3] = new GLatLng(laty2,lngx1);
+	        		pts[4] = new GLatLng(laty1,lngx1);
+	        		
+					if (docno != lastselecteddocno) {	
+						if (lastpoly != null) map.removeOverlay(lastpoly);
+						newpoly = new GPolyline(pts,color,width);
+	        			map.addOverlay(newpoly);
+	        			lastpoly = newpoly;
+	        			lastselecteddocno = docno;
+	        		}
+
+	        		//map.openInfoWindow(point,res[0]);
+	        	}else{
+	        		//map.clearOverlays();
+	        		//lastselecteddocno = '';
+	        	}  
+	        }
+	    
+	    });
+	    
+	     
+	    
+	    function mapClick(ol,latlon,olLatlon) {
+        	if (clckTimeOut) {
+            	window.clearTimeout(clckTimeOut);
+            	clckTimeOut = null;
+            	//doubleClick(ol,latlon);
+        	}
+        	else {
+            	clckTimeOut = window.setTimeout(function() {singleClick(ol,latlon)},500);
+        	}
+
+		} 
+		function singleClick(ol,latlng) {
+        	window.clearTimeout(clckTimeOut);
+        	clckTimeOut = null;
+        	// Process single click
+        	if (latlng)
+	        {	
+	        	document.getElementById("latFld").value = latlng.lat();
+	        	document.getElementById("lngFld").value = latlng.lng();
+	        
+	        	var zoomlevel = map.getZoom();
+	        	var x = getXFromLng(latlng.lng());
+	        	var y = getYFromLat(latlng.lat());
+	        	var res = locateArea(x,y,zoomlevel-1);
+	        	//var content = locateArea(x,y,zoomlevel-1);
+	        	if(res != null && res.length>0){
+		        	var cy = parseFloat(res[2]);
+					var cx = parseFloat(res[1]);
+
+					
+					var lati = getLat(cy);
+					var lngi = getLng(cx);
+
+					
+		    		var point = new GLatLng(lati,lngi);
+
+
+	        		map.openInfoWindow(point,res[0]);
+	        	}else{
+	        		//map.clearOverlays();
+	        		if (lastpoly != null) map.removeOverlay(lastpoly);
+	        		lastselecteddocno = '';
+	        		lastpoly = null;
+	        		newpoly = null;
+	        	}
+				//if (latlng) alert('click! '+latlng.lat());
+				//map.setCenter(marker.getPosition());
+			}
+
+		} 
+		
+		GEvent.addListener(map,'click', mapClick);
+		/*
+	 	GEvent.addListener(map, 'click', function(overlay, latlng)
+	    {
+	        var clicktime = Number(new Date());
+	        if (click1==0){
+	        	click1 = clicktime;	
+	        	return;
+	        }else{
+	        	click2=clicktime;
+	        	if ((click2-click1)<500){
+	        		click1 = 0;
+      				click2 = 0;
+	        		return;
+	        	}
+	        	click1 = 0;
+      			click2 = 0;
+	        }
+	 
+	        // display the lat/lng in your form's lat/lng fields
+	        if (latlng)
+	        {	
+	        	document.getElementById("latFld").value = latlng.lat();
+	        	document.getElementById("lngFld").value = latlng.lng();
+	        
+	        	var zoomlevel = map.getZoom();
+	        	var x = getXFromLng(latlng.lng());
+	        	var y = getYFromLat(latlng.lat());
+	        	var res = locateArea(x,y,zoomlevel-1);
+	        	//var content = locateArea(x,y,zoomlevel-1);
+	        	if(res != null && res.length>0){
+		        	var cy = parseFloat(res[2]);
+					var cx = parseFloat(res[1]);
+
+					
+					var lati = getLat(cy);
+					var lngi = getLng(cx);
+
+					
+		    		var point = new GLatLng(lati,lngi);
+
+
+	        		map.openInfoWindow(point,res[0]);
+	        	}else{
+	        		//map.clearOverlays();
+	        		if (lastpoly != null) map.removeOverlay(lastpoly);
+	        		lastselecteddocno = '';
+	        		lastpoly = null;
+	        		newpoly = null;
+	        	}
+				//if (latlng) alert('click! '+latlng.lat());
+				//map.setCenter(marker.getPosition());
+			}
+	    });*/
+		
+		GEvent.addListener(this.map,"zoomend", function(oldLevel, newLevel) 
+		{ 
+      		if (lastpoly != null) map.removeOverlay(lastpoly);
+	        lastselecteddocno = '';
+	        lastpoly = null;
+	        newpoly = null;
+	        //alert(newLevel);
+	        if (newLevel == 1){
+	        	//alert('hey!');
+	        	map.clearOverlays();
+	        	lastselecteddocno = '';
+	        	lastpoly = null;
+	        	newpoly = null;
+	        }else{
+	        	map.clearOverlays();
+	        	placeBubbles(newLevel-1);
+	        }
+   		}); 
+
+
+		
+		
+		//var marker=new GMarker(new GLatLng(0, 0));
+		//mm1.addMarker(marker,1,4); 
+		//alert('hola');
+		//var mm2 = new GMarkerManager(map, {maxZoom:4});
+
+		
+
+		/*
+		GDownloadUrl("coords.xml", function(data, responseCode) {
+		  
+		  var xml = GXml.parse(data);
+		  var markers = xml.documentElement.getElementsByTagName("area");
+		  for (var i = 0; i < markers.length; i++) {
+			var level = parseInt(markers[i].getAttribute("layer"));
+			//alert(level);
+			var cy = parseFloat(markers[i].getAttribute("cy"));
+			var cx = parseFloat(markers[i].getAttribute("cx"));
+			var lati = cy*(minlat-maxlat)+maxlat;
+			if (cy>0.5) lati = lati - 2;
+			var lngi = cx*(maxlng-minlng)-maxlng;
+			
+		    var point = new GLatLng(lati,lngi);
+		    //alert(lati+' '+lngi);
+		    if (level>0){
+		    	var marker=new GMarker(point);
+				mm1.addMarker(marker,level+1,level+1); 
+			
+		    }
+		    
+		    //map.addOverlay(marker);
+		  }
+		  
+		});
+		*/
+		// CREATES A MARKER MANAGER 
+		mm1 = new GMarkerManager(map, {maxZoom:5}); 
+		
+		//placeProgressMarkers(areas);
+		GDownloadUrl("coords.xml", function(data, responseCode) {
+			var xml = GXml.parse(data);
+			var markers = xml.documentElement.getElementsByTagName("area");
+			for (var i = 0; i < markers.length; i++) {
+				var level = parseInt(markers[i].getAttribute("layer"));
+				if (level>0){
+					//alert(level);
+					var docno = markers[i].getAttribute("docno");
+					var progress = [];
+					progress = getProgressForDocNo(docno);
+			
+					var up = progress[0];
+					//var up = 0.35;
+					var gp = progress[1];
+			
+					var uprogresslevel = Math.round(up*6); 
+					var radius = ((900000*gp+300000)/level);
+					//if (up>0    && up <= 0.20) progressicon = up1_Icon;
+					//if (up>0.20 && up <= 0.40) progressicon = up2_Icon;
+					//if (up>0.40 && up <= 0.60) progressicon = up3_Icon;
+					//if (up>0.60 && up <= 0.80) progressicon = up4_Icon;
+					//if (up>0.80 && up <= 1)    progressicon = up5_Icon;
+			
+					//var cy = parseFloat(markers[i].getAttribute("cy"))+0.1/level;
+					var cy = parseFloat(markers[i].getAttribute("cy"));
+					var cx = parseFloat(markers[i].getAttribute("cx"));
+					var lati = getLat(cy);
+					var lngi = getLng(cx);
+			
+			    	var point = new GLatLng(lati,lngi);
+		    		//alert(lati+' '+lngi);
+		    	
+		    		//var marker=new GMarker(point,{icon:progressicon});
+		    		
+					//mm1.addMarker(marker,level+1,level+1); 
+					if (level >= 1){
+						var point = new GLatLng(lati,lngi);
+						var circle = GPolygon.Circle(point,radius,progress_colors[uprogresslevel],1,0.4,progress_colors[uprogresslevel],0.4,{clickable:false});
+						progress_bubbles[level-1].push(circle);
+						//map.addOverlay(circle);
+						
+					}
+					//mm1.addMarker(circle,level+1,level+1);
+				}
+		    }
+		    placeBubbles(1);
+		    return false;
+		    //map.addOverlay(marker);
+		});
+
+		function placeBubbles(level){
+			
+			for (var i = 0; i < progress_bubbles[level-1].length; i++){
+				map.addOverlay(progress_bubbles[level-1][i]);
+			}
+		
+		}
+/////////////////////////////////////////////////////////////////////////////////////
+//Add any markers here e.g.
+//      map.addOverlay(new GMarker(new GLatLng(x,y)));
+/////////////////////////////////////////////////////////////////////////////////////
+		
+
+        
+      }
+    }
+	
+	
+	
+    //]]>
+    </script>
+  </head>
+  <body onresize="resize()" onload="load()" onunload="GUnload()" >
+    <div id="wrapper">
+      <div id="title">
+      Progressive Zooming Demo
+      </div>
+      <div id="map" style=""></div>
+	  <input type="text" id="latFld" value="0" />
+	  <input type="text" id="lngFld" value="0" />
+	  <input type="text" id="label" value="0" />
+	</div>  
+  </body>
+</html>
+

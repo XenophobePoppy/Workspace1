@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.zoom.application"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk android:minSdkVersion="15" />
+
+    <application
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name" >
+        <activity android:name=".LoginActivity"
+                  android:label="Login to your Account">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <!--  Entry for IndexActivity.class -->
+        <activity android:name=".IndexActivity"
+                  android:label="Select your course"></activity>
+        
+        <activity android:name=".ISDActivity"
+            android:label="Select the lecture">
+            
+        </activity>
+        <activity android:name=".ForumActivity"
+            android:label="Discuss with others"></activity>
+        <activity android:name=".Lecture1"
+            android:label="Lecture"></activity>
+        
+    </application>
+
+</manifest>

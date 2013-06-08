@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring accessors="true" comment="Delete element from project &apos;Google_Map1&apos;&#x0D;&#x0A;- Original project: &apos;Google_Map1&apos;&#x0D;&#x0A;- Original element: &apos;com.google_map.Google_Map1Activity.onCreate(...)&apos;" description="Delete element" element1="/src&lt;com.google_map{Google_Map1Activity.java[Google_Map1Activity~onCreate~QBundle;" elements="1" flags="589830" id="org.eclipse.jdt.ui.delete" resources="0" stamp="1331963282682" subPackages="false" version="1.0"/>
+</session>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" 
+   
+    android:background="@drawable/images1">
+    
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Welcome to ProgressZoom!"
+        />
+    <Button
+        android:text="Interactive System Design"
+        android:id="@+id/buttonisd"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+    </Button>
+
+    <Button
+        android:id="@+id/buttoncry"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Cryptography" />
+
+     <Button android:text="Advanced Database"
+         android:id="@+id/buttonad"
+         android:layout_width="fill_parent"
+         android:layout_height="wrap_content"/>
+
+     <Button
+         android:id="@+id/buttonhip"
+         android:layout_width="fill_parent"
+         android:layout_height="wrap_content"
+         android:text="Human Information Process" />
+     
+</LinearLayout>

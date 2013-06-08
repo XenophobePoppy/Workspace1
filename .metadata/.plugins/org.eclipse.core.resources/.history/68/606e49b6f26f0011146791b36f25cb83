@@ -1,0 +1,42 @@
+package com.shawnbe.mallfinder;
+
+
+
+import android.os.Bundle;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.ZoomControls;
+
+
+import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapView;
+
+public class Google_MapActivity extends MapActivity{
+	LinearLayout linearLayout;
+	MapView mapView;
+	ZoomControls mZoom;
+	
+	public void onCreate(Bundle savedlnstanceState){
+		super.onCreate(savedlnstanceState);
+		setContentView(R.layout.main);
+		
+		linearLayout=(LinearLayout)findViewById(R.id.zoom);
+		mapView=(MapView)findViewById(R.id.mapView);
+		mZoom=(ZoomControls)mapView.getZoomControls();
+		
+		
+		
+	}
+
+	@Override
+	protected boolean isRouteDisplayed(){
+		return false;
+	}
+}
+
+
+
+
+
+
+　　

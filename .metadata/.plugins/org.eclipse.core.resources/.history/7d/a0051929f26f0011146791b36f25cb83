@@ -1,0 +1,46 @@
+package com.shawnbe.mallfinder;
+
+import android.content.Context;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.ZoomControls;
+
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+
+public class Google_MapActivity extends MapActivity{
+	LinearLayout linearLayout;
+	MapView mapView;
+	ZoomControls mZoom;
+	
+	public void onCreate(Bundle savedlnstanceState){
+		super.onCreate(savedlnstanceState);//将布局绑定到activity
+		setContentView(R.layout.main);
+		
+		linearLayout=(LinearLayout)findViewById(R.id.zoomview);
+		mapView=(MapView)findViewById(R.id.mapView);
+		mZoom=(ZoomControls)mapView.getZoomControls();
+		
+		
+		
+	}
+
+	@Override
+	protected boolean isRouteDisplayed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+}
+
+
+
+
+
+
+　　
